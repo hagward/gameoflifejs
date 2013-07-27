@@ -17,20 +17,24 @@ Date: 2013-07-27
 			position: absolute;
 			left: 50%;
 		}
-		#canvasContainer {
-			margin: 10px 0;
+		textarea {
+			display: block;
+			margin: 20px auto 0;
+			width: 400px;
+			height: 100px;
 		}
 		#title {
 			text-align: center;
 			font-size: 1.5em;
-			margin-top: 20px;
-		}
-		#buttonContainer {
-			text-align: center;
+			margin: 20px;
 		}
 		#startStopButton {
 			font-weight: bold;
 			width: 80px;
+		}
+		.buttonContainer {
+			text-align: center;
+			margin: 10px 0;
 		}
 		</style>
 	</head>
@@ -42,7 +46,7 @@ Date: 2013-07-27
 			</canvas>
 			<canvas id="gridCanvas"></canvas>
 		</div>
-		<div id="buttonContainer">
+		<div class="buttonContainer">
 			<button id="startStopButton" title="Shortcut: space">Run</button>
 			<button id="stepButton" title="Shortcut: n">Next</button>
 			<button id="clearButton" title="Shortcut: del">Clear</button>
@@ -52,6 +56,11 @@ Date: 2013-07-27
 				<option value="hyper">Hyper</option>
 			</select>
 			Generations: <span id="generations">0</span>
+		</div>
+		<textarea id="jsonTextarea"></textarea>
+		<div class="buttonContainer">
+			<button id="setFromJsonButton">Set</button>
+			<button id="getJsonButton">Get</button>
 		</div>
 
 		<script src="gameoflife.js" type="text/javascript"></script>

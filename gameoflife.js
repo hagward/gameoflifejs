@@ -30,6 +30,10 @@ var clearButton = document.getElementById('clearButton');
 var speedSelect = document.getElementById('speedSelect');
 var generationsSpan = document.getElementById('generations');
 
+var jsonTextarea = document.getElementById('jsonTextarea');
+var setFromJsonButton = document.getElementById('setFromJsonButton');
+var getJsonButton = document.getElementById('getJsonButton');
+
 var canvas = document.getElementById('canvasOfLife');
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
@@ -50,22 +54,63 @@ gridContext.strokeStyle = colorGrid;
 
 drawGrid();
 
+/*
+ * Form listeners.
+ */
 startStopButton.onclick = function() {
 	toggleStart();
 }
-
 stepButton.onclick = function() {
 	updateAndDraw();
 }
-
 clearButton.onclick = function() {
 	resetBlocks();
 	generations = 0;
 	draw();
 }
+setFromJsonButton.onclick = function() {
+	var filledBlocks = JSON.parse(jsonTextarea.value);
+	if (!(filledBlocks instanceof Array)) {
+		console.log('error: input must be an array');
+		return;
+	}
 
+	resetBlocks();
+	for (var i = 0; i < filledBlocks.length; i++) {
+		if (filledBlocks[i].length == 2) {
+			var x = filledBlocks[i][0];
+			var y = filledBlocks[i][1];
+			blocks[y][x] = 1;
+		}
+	}
+	draw();
+}
+getJsonButton.onclick = function() {
+	var filledBlocks = [];
+	for (var i = 0; i < height; i++)
+		for (var j = 0; j < width; j++)
+			if (blocks[i][j] == 1)
+				filledBlocks.push([j, i]);
+	jsonTextarea.value = JSON.stringify(filledBlocks);
+}
+speedSelect.onchange = function() {
+	var interval = intervals[speedSelect.value];
+	if (!interval)
+		return;
+
+	currentInterval = speedSelect.value;
+	if (running) {
+		clearInterval(loop);
+		loop = setInterval(updateAndDraw, interval);
+	}
+}
+
+/*
+ * Mouse listeners.
+ */
 var mouseDown = 0;
 var fill = true;
+var lastX, lastY;
 gridCanvas.onmousedown = function(event) {
 	mouseDown++;
 
@@ -81,8 +126,6 @@ gridCanvas.onmousedown = function(event) {
 gridCanvas.onmouseup = function() {
 	mouseDown--;
 }
-
-var lastX, lastY;
 gridCanvas.onmousemove = function(event) {
 	if (mouseDown) {
 		var block = getBlockFromEvent(event);
@@ -100,18 +143,9 @@ gridCanvas.onmousemove = function(event) {
 	}
 }
 
-speedSelect.onchange = function() {
-	var interval = intervals[speedSelect.value];
-	if (!interval)
-		return;
-
-	currentInterval = speedSelect.value;
-	if (running) {
-		clearInterval(loop);
-		loop = setInterval(updateAndDraw, interval);
-	}
-}
-
+/*
+ * Key listener.
+ */
 window.onkeydown = function(event) {
 	var keyCode = event.keyCode || event.which;
 	switch (keyCode) {
