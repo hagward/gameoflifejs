@@ -1,0 +1,52 @@
+<!--
+gameoflife.js v0.1, by Anders Hagward.
+Date: 2013-07-27
+-->
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>gameoflife.js</title>
+		<style>
+		body {
+			font-family: "Georgia", serif;
+		}
+		canvas {
+			margin: 10px auto;
+			display: block;
+		}
+		#title {
+			text-align: center;
+			font-size: 1.5em;
+			margin-top: 20px;
+		}
+		#buttonContainer {
+			text-align: center;
+		}
+		#startStopButton {
+			font-weight: bold;
+			width: 80px;
+		}
+		</style>
+	</head>
+	<body>
+		<div id="title">gameoflife.js</div>
+		<canvas id="canvasOfLife">
+			Your browser does not support the canvas element!
+		</canvas>
+		<div id="buttonContainer">
+			<button id="startStopButton" title="Shortcut: space">Run</button>
+			<button id="stepButton" title="Shortcut: n">Next</button>
+			<button id="clearButton" title="Shortcut: del">Clear</button>
+			<select id="speedSelect">
+				<option value="normal">Normal</option>
+				<option value="fast">Fast</option>
+				<option value="hyper">Hyper</option>
+			</select>
+			Generations: <span id="generations">0</span>
+		</div>
+
+		<script src="gameoflife.js" type="text/javascript"></script>
+	</body>
+</html>
