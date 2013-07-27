@@ -22,7 +22,7 @@ var loop
 // Initialize block array.
 // 0 = empty, 1 = filled
 var blocks = [];
-resetBlocks();
+resetAllBlocks();
 
 var startStopButton = document.getElementById('startStopButton');
 var stepButton = document.getElementById('stepButton');
@@ -64,7 +64,7 @@ stepButton.onclick = function() {
 	updateAndDraw();
 }
 clearButton.onclick = function() {
-	resetBlocks();
+	resetAllBlocks();
 	generations = 0;
 	draw();
 }
@@ -75,7 +75,7 @@ setFromJsonButton.onclick = function() {
 		return;
 	}
 
-	resetBlocks();
+	resetAllBlocks();
 	for (var i = 0; i < filledBlocks.length; i++) {
 		if (filledBlocks[i].length == 2) {
 			var x = filledBlocks[i][0];
@@ -153,10 +153,18 @@ window.onkeydown = function(event) {
 			event.preventDefault();
 			toggleStart();
 			break;
+		case 37: // Left.
+		case 38: // Up.
+		case 39: // Right.
+		case 40: // Down.
+			event.preventDefault();
+			moveAllBlocks(keyCode - 37); // 0 - left, 1 - up etc.
+			draw();
+			break;
 		case 46: // Del.
 			event.preventDefault();
 			if (!running) {
-				resetBlocks();
+				resetAllBlocks();
 				generations = 0;
 				draw();
 			}
@@ -191,7 +199,7 @@ function getBlockFromEvent(event) {
 /**
  * Resets the blocks array, making it larger if needed.
  */
-function resetBlocks() {
+function resetAllBlocks() {
 	for (var i = 0; i < height; i++) {
 		if (blocks.length <= i)
 			blocks.push([]);
@@ -200,6 +208,25 @@ function resetBlocks() {
 				blocks[i].push(0);
 			else
 				blocks[i][j] = 0;
+		}
+	}
+}
+
+function moveAllBlocks(direction) {
+	for (var i = 0; i < height; i++) {
+		for (var j = 0; j < width; j++) {
+			// Move left.
+			if (direction == 0 && j < width - 1)
+				blocks[i][j] = blocks[i][j + 1];
+			// Move up.
+			else if (direction == 1 && i < height - 1)
+				blocks[i][j] = blocks[i + 1][j];
+			// Move right.
+			else if (direction == 2 && j < width - 1)
+				blocks[i][width - j - 1] = blocks[i][width - j - 2];
+			// Move down.
+			else if (direction == 3 && i < height - 1)
+				blocks[height - i - 1][j] = blocks[height - i - 2][j];
 		}
 	}
 }
