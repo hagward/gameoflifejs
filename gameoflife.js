@@ -8,6 +8,7 @@ var canvasHeight = 600;
 var blockSize = 10;
 var colorBg = 'gray';
 var colorFg = 'yellow';
+var colorGrid = 'white';
 
 var running = false;
 var generations = 0;
@@ -16,7 +17,7 @@ var currentInterval = 'normal';
 var width = Math.floor(canvasWidth / blockSize);
 var height = Math.floor(canvasHeight / blockSize);
 
-var loop;
+var loop
 
 // Initialize block array.
 // 0 = empty, 1 = filled
@@ -33,8 +34,21 @@ var canvas = document.getElementById('canvasOfLife');
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
 canvas.style.background = colorBg;
+canvas.style.marginLeft = (-canvasWidth / 2) + "px";
+
+var gridCanvas = document.getElementById('gridCanvas');
+gridCanvas.width = canvasWidth;
+gridCanvas.height = canvasHeight;
+gridCanvas.style.marginLeft = (-canvasWidth / 2) + "px";
+
+var canvasContainer = document.getElementById('canvasContainer');
+canvasContainer.style.height = canvasHeight + 'px';
 
 var context = canvas.getContext('2d');
+var gridContext = gridCanvas.getContext('2d');
+gridContext.strokeStyle = colorGrid;
+
+drawGrid();
 
 startStopButton.onclick = function() {
 	toggleStart();
@@ -52,7 +66,7 @@ clearButton.onclick = function() {
 
 var mouseDown = 0;
 var fill = true;
-canvas.onmousedown = function(event) {
+gridCanvas.onmousedown = function(event) {
 	mouseDown++;
 
 	var block = getBlockFromEvent(event);
@@ -64,12 +78,12 @@ canvas.onmousedown = function(event) {
 	context.fillStyle = (blocks[y][x] == 1) ? colorFg : colorBg;
 	context.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
 }
-canvas.onmouseup = function() {
+gridCanvas.onmouseup = function() {
 	mouseDown--;
 }
 
 var lastX, lastY;
-canvas.onmousemove = function(event) {
+gridCanvas.onmousemove = function(event) {
 	if (mouseDown) {
 		var block = getBlockFromEvent(event);
 		var x = block[0];
@@ -202,6 +216,23 @@ function draw() {
 		}
 	}
 	generationsSpan.innerHTML = generations;
+}
+
+function drawGrid() {
+	for (var i = 1; i < width; i++) {
+		var x = i * blockSize;
+		gridContext.beginPath();
+		gridContext.moveTo(x, 0);
+		gridContext.lineTo(x, canvasHeight);
+		gridContext.stroke();
+	}
+	for (var i = 1; i < height; i++) {
+		var y = i * blockSize;
+		gridContext.beginPath();
+		gridContext.moveTo(0, y);
+		gridContext.lineTo(canvasWidth, y);
+		gridContext.stroke();
+	}
 }
 
 function getNumNeighbours(i, j) {

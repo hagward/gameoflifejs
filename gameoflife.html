@@ -13,8 +13,12 @@ Date: 2013-07-27
 			font-family: "Georgia", serif;
 		}
 		canvas {
-			margin: 10px auto;
 			display: block;
+			position: absolute;
+			left: 50%;
+		}
+		#canvasContainer {
+			margin: 10px 0;
 		}
 		#title {
 			text-align: center;
@@ -32,9 +36,12 @@ Date: 2013-07-27
 	</head>
 	<body>
 		<div id="title">gameoflife.js</div>
-		<canvas id="canvasOfLife">
-			Your browser does not support the canvas element!
-		</canvas>
+		<div id="canvasContainer">
+			<canvas id="canvasOfLife">
+				Your browser does not support the canvas element!
+			</canvas>
+			<canvas id="gridCanvas"></canvas>
+		</div>
 		<div id="buttonContainer">
 			<button id="startStopButton" title="Shortcut: space">Run</button>
 			<button id="stepButton" title="Shortcut: n">Next</button>
