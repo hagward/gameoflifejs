@@ -1,28 +1,29 @@
 /**
  * gameoflife.js v0.1, by Anders Hagward.
- * Date: 2013-07-27
+ * Date: 2013-07-28
  */
 
 var canvasWidth = 800;
 var canvasHeight = 600;
 var blockSize = 10;
-var colorBg = 'gray';
-var colorFg = 'yellow';
-var colorGrid = 'white';
+var colorBg = '#CCC';
+var colorFg = '#BF3030';
+var colorGrid = '#AAA';
 
 var running = false;
 var generations = 0;
 var intervals = {'normal': 200, 'fast': 50, 'hyper': 10};
 var currentInterval = 'normal';
-var width = Math.floor(canvasWidth / blockSize);
-var height = Math.floor(canvasHeight / blockSize);
 
-var loop
+var width, height;
+resetDimensions();
+
+var loop;
 
 // Initialize block array.
 // 0 = empty, 1 = filled
 var blocks = [];
-resetAllBlocks();
+resizeBlockArray(true);
 
 var startStopButton = document.getElementById('startStopButton');
 var stepButton = document.getElementById('stepButton');
@@ -46,11 +47,11 @@ gridCanvas.height = canvasHeight;
 gridCanvas.style.marginLeft = (-canvasWidth / 2) + "px";
 
 var canvasContainer = document.getElementById('canvasContainer');
+canvasContainer.style.width = canvasWidth + 'px';
 canvasContainer.style.height = canvasHeight + 'px';
 
 var context = canvas.getContext('2d');
 var gridContext = gridCanvas.getContext('2d');
-gridContext.strokeStyle = colorGrid;
 
 drawGrid();
 
@@ -64,9 +65,9 @@ stepButton.onclick = function() {
 	updateAndDraw();
 }
 clearButton.onclick = function() {
-	resetAllBlocks();
+	resizeBlockArray(true);
 	generations = 0;
-	draw();
+	drawBlocks();
 }
 setFromJsonButton.onclick = function() {
 	var filledBlocks = JSON.parse(jsonTextarea.value);
@@ -75,7 +76,7 @@ setFromJsonButton.onclick = function() {
 		return;
 	}
 
-	resetAllBlocks();
+	resizeBlockArray(true);
 	for (var i = 0; i < filledBlocks.length; i++) {
 		if (filledBlocks[i].length == 2) {
 			var x = filledBlocks[i][0];
@@ -83,7 +84,7 @@ setFromJsonButton.onclick = function() {
 			blocks[y][x] = 1;
 		}
 	}
-	draw();
+	drawBlocks();
 }
 getJsonButton.onclick = function() {
 	var filledBlocks = [];
@@ -94,15 +95,7 @@ getJsonButton.onclick = function() {
 	jsonTextarea.value = JSON.stringify(filledBlocks);
 }
 speedSelect.onchange = function() {
-	var interval = intervals[speedSelect.value];
-	if (!interval)
-		return;
-
-	currentInterval = speedSelect.value;
-	if (running) {
-		clearInterval(loop);
-		loop = setInterval(updateAndDraw, interval);
-	}
+	setSpeedFromSelect(speedSelect);
 }
 
 /*
@@ -159,23 +152,79 @@ window.onkeydown = function(event) {
 		case 40: // Down.
 			event.preventDefault();
 			moveAllBlocks(keyCode - 37); // 0 - left, 1 - up etc.
-			draw();
+			drawBlocks();
 			break;
 		case 46: // Del.
 			event.preventDefault();
 			if (!running) {
-				resetAllBlocks();
+				resizeBlockArray(true);
 				generations = 0;
-				draw();
+				drawBlocks();
 			}
+			break;
+		case 49: // 1.
+		case 50: // 2.
+		case 51: // 3.
+			speedSelect.selectedIndex = keyCode - 49;
+			setSpeedFromSelect(speedSelect);
+			break;
+		case 73: // I.
+			zoom(5);
 			break;
 		case 78: // N.
 			event.preventDefault();
 			updateAndDraw();
 			break;
+		case 79: // O.
+			zoom(-5);
+			break;
 	}
 }
 
+/**
+ * Clears the game canvas and draws the blocks.
+ */
+function drawBlocks() {
+	canvas.width = canvas.width;
+	context.fillStyle = colorFg;
+
+	for (var i = 0; i < height; i++) {
+		for (var j = 0; j < width; j++) {
+			// Draw.
+			if (blocks[i][j] == 1)
+				context.fillRect(blockSize * j, blockSize * i, blockSize, blockSize);
+		}
+	}
+	generationsSpan.innerHTML = generations;
+}
+
+/**
+ * Clears the grid canvas and draws the grid.
+ */
+function drawGrid() {
+	gridCanvas.width = gridCanvas.width;
+	gridContext.strokeStyle = colorGrid;
+
+	for (var i = 1; i < width; i++) {
+		var x = i * blockSize;
+		gridContext.beginPath();
+		gridContext.moveTo(x, 0);
+		gridContext.lineTo(x, canvasHeight);
+		gridContext.stroke();
+	}
+	for (var i = 1; i < height; i++) {
+		var y = i * blockSize;
+		gridContext.beginPath();
+		gridContext.moveTo(0, y);
+		gridContext.lineTo(canvasWidth, y);
+		gridContext.stroke();
+	}
+}
+
+/**
+ * Returns the x and y values for the clicked block, based on a canvas.onclick
+ * event.
+ */
 function getBlockFromEvent(event) {
 	// Find click position.
 	var x, y;
@@ -197,40 +246,95 @@ function getBlockFromEvent(event) {
 }
 
 /**
- * Resets the blocks array, making it larger if needed.
+ * Returns the number of neighbours for the block at position (i, j).
  */
-function resetAllBlocks() {
+function getNumNeighbours(i, j) {
+	var numNeighbours = 0;
+	if (j > 0 && blocks[i][j - 1] == 1) numNeighbours++;
+	if (j < width-1 && blocks[i][j + 1] == 1) numNeighbours++;
+	if (i > 0 && blocks[i - 1][j] == 1) numNeighbours++;
+	if (i > 0 && j > 0 && blocks[i - 1][j - 1] == 1) numNeighbours++;
+	if (i > 0 && j < width-1 && blocks[i - 1][j + 1] == 1) numNeighbours++;
+	if (i < height-1 && blocks[i + 1][j] == 1) numNeighbours++;
+	if (i < height-1 && j > 0 && blocks[i + 1][j - 1] == 1) numNeighbours++;
+	if (i < height-1 && j < width-1 && blocks[i + 1][j + 1] == 1) numNeighbours++;
+	return numNeighbours;
+}
+
+/**
+ * Moves all the blocks in the specified direction, where 0, 1, 2 and 3
+ * corresponds to left, up, right and down respectively.
+ */
+function moveAllBlocks(direction) {
+	var h = blocks.length;
+	if (h == 0) return;
+	var w = blocks[0].length;
+
+	for (var i = 0; i < h; i++) {
+		for (var j = 0; j < w; j++) {
+			// Move left.
+			if (direction == 0 && j < w - 1)
+				blocks[i][j] = blocks[i][j + 1];
+			// Move up.
+			else if (direction == 1 && i < h - 1)
+				blocks[i][j] = blocks[i + 1][j];
+			// Move right.
+			else if (direction == 2 && j < w - 1)
+				blocks[i][w - j - 1] = blocks[i][w - j - 2];
+			// Move down.
+			else if (direction == 3 && i < h - 1)
+				blocks[h - i - 1][j] = blocks[h - i - 2][j];
+		}
+	}
+}
+
+/**
+ * Sets the game dimensions based on the current canvas dimensions and block
+ * size.
+ */
+function resetDimensions() {
+	width = Math.floor(canvasWidth / blockSize);
+	height = Math.floor(canvasHeight / blockSize);
+}
+
+/**
+ * Resizes the array to fit the current game dimensions. If 'reset' is true, it
+ * will also set all values to zero.
+ */
+function resizeBlockArray(reset) {
+	if (!reset && blocks.length >= height && blocks[0].length >= height)
+		return;
+
 	for (var i = 0; i < height; i++) {
 		if (blocks.length <= i)
 			blocks.push([]);
 		for (var j = 0; j < width; j++) {
 			if (blocks[i].length <= j)
 				blocks[i].push(0);
-			else
+			else if (reset)
 				blocks[i][j] = 0;
 		}
 	}
 }
 
-function moveAllBlocks(direction) {
-	for (var i = 0; i < height; i++) {
-		for (var j = 0; j < width; j++) {
-			// Move left.
-			if (direction == 0 && j < width - 1)
-				blocks[i][j] = blocks[i][j + 1];
-			// Move up.
-			else if (direction == 1 && i < height - 1)
-				blocks[i][j] = blocks[i + 1][j];
-			// Move right.
-			else if (direction == 2 && j < width - 1)
-				blocks[i][width - j - 1] = blocks[i][width - j - 2];
-			// Move down.
-			else if (direction == 3 && i < height - 1)
-				blocks[height - i - 1][j] = blocks[height - i - 2][j];
-		}
+/**
+ * Sets the current update interval from the specified HTML select element.
+ */
+function setSpeedFromSelect(select) {
+	var interval = intervals[select.value];
+	if (!interval)
+		return;
+
+	currentInterval = select.value;
+	if (running) {
+		clearInterval(loop);
+		loop = setInterval(updateAndDraw, interval);
 	}
 }
 
+/**
+ * Starts or stops the game, and updates the start and clear buttons.
+ */
 function toggleStart() {
 	running = !running;
 	if (running) {
@@ -243,6 +347,9 @@ function toggleStart() {
 	clearButton.disabled = running;
 }
 
+/**
+ * Handles the game logic and draws the blocks by calling drawBlocks().
+ */
 function updateAndDraw() {
 	var blocksCopy = [];
 
@@ -262,49 +369,21 @@ function updateAndDraw() {
 
 	blocks = blocksCopy;
 	generations++;
-	draw();
+	drawBlocks();
 }
 
-function draw() {
-	canvas.width = canvas.width;
-	context.fillStyle = colorFg;
+/**
+ * Zooms the game in or out by adding 'amount' to the block size. A positive
+ * value zooms in, while a negative value zooms out. It will only zoom out if
+ * (block size + amount) > 0.
+ */
+function zoom(amount) {
+	if (blockSize + amount <= 0)
+		return;
 
-	for (var i = 0; i < height; i++) {
-		for (var j = 0; j < width; j++) {
-			// Draw.
-			if (blocks[i][j] == 1)
-				context.fillRect(blockSize * j, blockSize * i, blockSize, blockSize);
-		}
-	}
-	generationsSpan.innerHTML = generations;
-}
-
-function drawGrid() {
-	for (var i = 1; i < width; i++) {
-		var x = i * blockSize;
-		gridContext.beginPath();
-		gridContext.moveTo(x, 0);
-		gridContext.lineTo(x, canvasHeight);
-		gridContext.stroke();
-	}
-	for (var i = 1; i < height; i++) {
-		var y = i * blockSize;
-		gridContext.beginPath();
-		gridContext.moveTo(0, y);
-		gridContext.lineTo(canvasWidth, y);
-		gridContext.stroke();
-	}
-}
-
-function getNumNeighbours(i, j) {
-	var numNeighbours = 0;
-	if (j > 0 && blocks[i][j - 1] == 1) numNeighbours++;
-	if (j < width-1 && blocks[i][j + 1] == 1) numNeighbours++;
-	if (i > 0 && blocks[i - 1][j] == 1) numNeighbours++;
-	if (i > 0 && j > 0 && blocks[i - 1][j - 1] == 1) numNeighbours++;
-	if (i > 0 && j < width-1 && blocks[i - 1][j + 1] == 1) numNeighbours++;
-	if (i < height-1 && blocks[i + 1][j] == 1) numNeighbours++;
-	if (i < height-1 && j > 0 && blocks[i + 1][j - 1] == 1) numNeighbours++;
-	if (i < height-1 && j < width-1 && blocks[i + 1][j + 1] == 1) numNeighbours++;
-	return numNeighbours;
+	blockSize += amount;
+	resetDimensions();
+	resizeBlockArray(false);
+	drawBlocks();
+	drawGrid();
 }
