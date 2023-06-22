@@ -4,7 +4,7 @@ A basic and simple implementation of Game of Life in JavaScript.
 
 ## Demo
 
-Feel free to [try it out](https://dl.dropboxusercontent.com/u/334931/gameoflifejs/gameoflife.html).
+Feel free to [try it out](https://hagward.github.io/gameoflifejs/).
 
 Some useful keyboard shortcuts:
 
